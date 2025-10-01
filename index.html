@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minhas Notas</title>
+  <meta name="theme-color" content="#0ea5e9" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Minhas Notas</h1>
+    <nav>
+      <span id="user-email"></span>
+      <button id="logout-btn" class="btn-danger">Sair</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Nova nota</h2>
+      <textarea id="note-text" rows="4" placeholder="Escreva sua nota..."></textarea>
+      <button id="add-note" class="btn-primary">Adicionar</button>
+    </section>
+
+    <section class="card">
+      <h2>Suas notas</h2>
+      <ul id="notes-list" class="notes"></ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>Offline ready ✔ – PWA ✨</small>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Protege rota: se não tiver sessão, vai pro login
+    (async () => {
+      const user = window.Auth.getSession();
+      if (!user) {
+        location.replace("login.html");
+        return;
+      }
+      // Preenche email
+      document.querySelector("#user-email").textContent = user.email;
+
+      // Eventos
+      document.querySelector("#logout-btn").onclick = () => {
+        window.Auth.logout();
+        location.replace("login.html");
+      };
+
+      const notesList = document.querySelector("#notes-list");
+      const noteText = document.querySelector("#note-text");
+      const addBtn = document.querySelector("#add-note");
+
+      const render = () => {
+        const notes = window.Notes.getAll(user.email);
+        notesList.innerHTML = "";
+        if (!notes.length) {
+          const li = document.createElement("li");
+          li.className = "empty";
+          li.textContent = "Sem notas ainda.";
+          notesList.appendChild(li);
+          return;
+        }
+        notes.forEach((n, i) => {
+          const li = document.createElement("li");
+          const text = document.createElement("div");
+          text.className = "note-text";
+          text.textContent = n;
+
+          const del = document.createElement("button");
+          del.className = "btn-danger small";
+          del.textContent = "Excluir";
+          del.onclick = () => {
+            window.Notes.remove(user.email, i);
+            render();
+          };
+
+          li.appendChild(text);
+          li.appendChild(del);
+          notesList.appendChild(li);
+        });
+      };
+
+      addBtn.onclick = () => {
+        const v = noteText.value.trim();
+        if (!v) return;
+        window.Notes.add(user.email, v);
+        noteText.value = "";
+        render();
+      };
+
+      render();
+    })();
+  </script>
+</body>
+</html>

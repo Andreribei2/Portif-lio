@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Entrar | Lista de Tarefas</title>
+  <meta name="theme-color" content="#0ea5e9" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  </script>
+</head>
+<body class="auth-body">
+  <main class="auth-card">
+    <h1>Lista de Tarefas</h1>
+    <p class="muted">Faça login ou crie sua conta</p>
+
+    <div class="tabs">
+      <button id="tab-login" class="tab active">Login</button>
+      <button id="tab-signup" class="tab">Cadastrar</button>
+    </div>
+
+    <!-- LOGIN -->
+    <form id="form-login" class="form visible" onsubmit="return false;">
+      <label>
+        E-mail
+        <input id="login-email" type="email" required placeholder="voce@exemplo.com" />
+      </label>
+      <label>
+        Senha
+        <input id="login-pass" type="password" required placeholder="••••••••" />
+      </label>
+      <button id="btn-login" class="btn-primary">Entrar</button>
+      <p id="login-msg" class="msg"></p>
+    </form>
+
+    <!-- SIGNUP -->
+    <form id="form-signup" class="form" onsubmit="return false;">
+      <label>
+        E-mail
+        <input id="signup-email" type="email" required />
+      </label>
+      <label>
+        Senha (mín. 6)
+        <input id="signup-pass" type="password" minlength="6" required />
+      </label>
+      <button id="btn-signup" class="btn-primary">Criar conta</button>
+      <p id="signup-msg" class="msg"></p>
+    </form>
+  </main>
+
+  <footer class="footer">
+    <small>PWA • Funciona offline (demo didática, sem backend)</small>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Se já estiver logado, vai direto para as tarefas
+    const existingSession = window.Auth.getSession && window.Auth.getSession();
+    if (existingSession) {
+      location.replace("/index.html");
+    }
+
+    // troca de abas
+    const tabLogin = document.querySelector("#tab-login");
+    const tabSignup = document.querySelector("#tab-signup");
+    const formLogin = document.querySelector("#form-login");
+    const formSignup = document.querySelector("#form-signup");
+    function setTab(which) {
+      const isLogin = which === "login";
+      tabLogin.classList.toggle("active", isLogin);
+      tabSignup.classList.toggle("active", !isLogin);
+      formLogin.classList.toggle("visible", isLogin);
+      formSignup.classList.toggle("visible", !isLogin);
+    }
+    tabLogin.onclick = () => setTab("login");
+    tabSignup.onclick = () => setTab("signup");
+
+    // ações
+    const loginMsg = document.querySelector("#login-msg");
+    const signupMsg = document.querySelector("#signup-msg");
+
+    document.querySelector("#btn-login").onclick = async () => {
+      loginMsg.textContent = "";
+      const email = document.querySelector("#login-email").value.trim().toLowerCase();
+      const pass  = document.querySelector("#login-pass").value;
+      try {
+        await window.Auth.login(email, pass);
+        location.replace("index.html");
+      } catch (e) {
+        loginMsg.textContent = e.message || "Falha no login.";
+      }
+    };
+
+    document.querySelector("#btn-signup").onclick = async () => {
+      signupMsg.textContent = "";
+      const email = document.querySelector("#signup-email").value.trim().toLowerCase();
+      const pass  = document.querySelector("#signup-pass").value;
+      try {
+        await window.Auth.signup(email, pass);
+        signupMsg.textContent = "Conta criada! Você já pode entrar.";
+        setTab("login");
+      } catch (e) {
+        signupMsg.textContent = e.message || "Não foi possível criar a conta.";
+      }
+    };
+  </script>
+</body>
+</html>
